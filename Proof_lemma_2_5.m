@@ -1,4 +1,6 @@
-function [Dim,DimR, Wout,Tvc, Proof]=Proof_lemma_2_5(m,accuracy)
+%function [Dim,DimR, Wout,Tvc, Proof]=Proof_lemma_2_5(m,accuracy)
+function [Proof]=Proof_lemma_2_5(m)
+
 
 %% USAGE:   
 %%          [Dim, DimR,Wout,Tvc]=Proof_lemma_2_5(m,accuracy);  
@@ -33,98 +35,120 @@ function [Dim,DimR, Wout,Tvc, Proof]=Proof_lemma_2_5(m,accuracy)
 %% EXAMPLE_: 
 %%           [Dim,DimR, Wout,Tvc, Proof]=Proof_lemma_2_5(6,4)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Computing the intersection matrix.
+Im=MonMatrix(m,1);    
+
+%% Computing the Krylov space dimension
+[U, Diag]=eig(Im);
+Diag=unique(round(diag(Diag),10));  %%%% Different eigenvalues of the Intersection matrix
+Dim=length(Diag);
+
+
+
+%%%%%%%%
 d=m(1); e=m(2);
 N=(e-1)*(d-1);
-[Dim0,Wout,Vout]=VanCycleSub([d,e],accuracy); %% Compute the suspace generated for x^d+y^e
-Tvc=zeros(size(Wout));
+%[Dim0,Wout]=VanCycleSubV1([d,e],accuracy); %% Compute the suspace generated for x^d+y^e
+%Tvc=zeros(size(Wout));
     
 %% The next matrix save the information about the eigenvalues for any degree.
-Dim(1)=N;  %% First colum, the degree
-Dim(2)=Dim0; %% Second column, if the eigevalues are different
-    
-%% The next matrix save information about the rank of Mon(vi) i=1...N , for any degree.
-for l=1:N
-    DimR(l)=rank(Wout(:,:,l));
-end
+%Dim(1)=N;  %% First colum, the degree
+%Dim(2)=Dim0; %% Second column, if the eigevalues are different
+ 
 
 %%% Proof of Lemma 2.5
-if N==Dim0 %% If the eigenvalues are different
+if N==Dim %% If the eigenvalues are different
    Proof_for_d=1;   %%%%This is the product os logic sentence for any degre d.
-   for l=1:N
+   for l=1:N 
+       %if mod(l,100)==0 
+         %  l
+       %end
         %% First we identify the column and the row in the Dynkin diagram
         colj=ceil(l/(e-1));
         rowi=mod(l,(e-1)); if rowi==0 rowi=e-1; end
         p=gcd(d,colj);
         r=gcd(e,rowi);
-                  
+
         %% Theoreic Vanishing cycles in the subspaces generated. They are in the columns of the Dynkin diagram, rn with n=1...d/r-1
-        Tvci=zeros(size(Wout(:,:,l)));   %% Conditions by fixing i
+        Tvci=zeros(N,1);   %% Conditions by fixing i
         Cont=1;
         for mm=1:d/p-1
             %% v_{i,mp}
             Dij=(mm*p-1)*(e-1)+rowi; % from ij to position in the Dynkin
             Tvci(Dij,Cont)=1;
             Cont=Cont+1;
-             for kk=1:p-1
-                 %% v_{i,mp-k}+v_{i,mp+k}
-                 Dij=((mm*p-kk)-1)*(e-1)+rowi; % from ij to position in the Dynkin
-                 Tvci(Dij,Cont)=1; 
-                 Dij=((mm*p+kk)-1)*(e-1)+rowi; % from ij to position in the Dynkin
-                 Tvci(Dij,Cont)=1; 
-                 Cont=Cont+1;
-
-                 %% v_{i-1,mp-k}+v_{i-1,mp+k}+v_{i+1,mp-k}+v_{i+1,mp+k}
-                 Dij=((mm*p-kk)-1)*(e-1)+(rowi-1); % from ij to position in the Dynkin
-                 if rowi-1<e && rowi-1>0 Tvci(Dij,Cont)=1; end
-                 Dij=((mm*p+kk)-1)*(e-1)+(rowi-1); % from ij to position in the Dynkin
-                 if rowi-1<e && rowi-1>0 Tvci(Dij,Cont)=1; end
-                 Dij=((mm*p-kk)-1)*(e-1)+(rowi+1); % from ij to position in the Dynkin
-                 if rowi+1<e && rowi+1>0 Tvci(Dij,Cont)=1; end
-                 Dij=((mm*p+kk)-1)*(e-1)+(rowi+1); % from ij to position in the Dynkin
-                 if rowi+1<e && rowi+1>0 Tvci(Dij,Cont)=1; end
-                 Cont=Cont+1;
-             end
         end
-            
-        Tvcj=zeros(size(Wout(:,:,l)));   %% Conditions by fixing j
-            Cont=1;
-            for nn=1:e/r-1
-                %% v_{nr,j}
-                Dij=(colj-1)*(e-1)+nn*r; % from ij to position in the Dynkin
-                Tvcj(Dij,Cont)=1; Cont=Cont+1;
-                 for ll=1:r-1
-                     %% v_{nr-l,j}+v_{nr+l,j}
-                     Dij=(colj-1)*(e-1)+(nn*r-ll); % from ij to position in the Dynkin
-                     Tvcj(Dij,Cont)=1;
-                     Dij=(colj-1)*(e-1)+(nn*r+ll); % from ij to position in the Dynkin
-                     Tvcj(Dij,Cont)=1; Cont=Cont+1;
-                     
-                      %% v_{nr-l,j-1}+v_{nr+l,j-1}+v_{nr-l,j+1}+v_{nr+l,j+1}
-                     Dij=((colj-1)-1)*(e-1)+(nn*r-ll); % from ij to position in the Dynkin
-                     if colj-1<d && colj-1>0 Tvcj(Dij,Cont)=1; end
-                     Dij=((colj-1)-1)*(e-1)+(nn*r+ll); % from ij to position in the Dynkin
-                     if colj-1<d && colj-1>0 Tvcj(Dij,Cont)=1; end
-                     Dij=((colj+1)-1)*(e-1)+(nn*r-ll); % from ij to position in the Dynkin
-                     if colj+1<d && colj+1>0 Tvcj(Dij,Cont)=1; end
-                     Dij=((colj+1)-1)*(e-1)+(nn*r+ll); % from ij to position in the Dynkin
-                     if colj+1<d && colj+1>0 Tvcj(Dij,Cont)=1; end
-                 end
-            end
-                     
+
+        for kk=1:p-1
+             %% v_{i,mp-k}+v_{i,mp+k}
+             Dij=((colj-kk)-1)*(e-1)+rowi; % from ij to position in the Dynkin
+             Tvci(Dij,Cont)=1; 
+             Dij=((colj+kk)-1)*(e-1)+rowi; % from ij to position in the Dynkin
+             Tvci(Dij,Cont)=1; 
+             Cont=Cont+1;
+
+             %% v_{i-1,mp-k}+v_{i-1,mp+k}+v_{i+1,mp-k}+v_{i+1,mp+k}
+             Dij=((colj-kk)-1)*(e-1)+(rowi-1); % from ij to position in the Dynkin
+             if rowi-1<e && rowi-1>0 Tvci(Dij,Cont)=1; end
+             Dij=((colj+kk)-1)*(e-1)+(rowi-1); % from ij to position in the Dynkin
+             if rowi-1<e && rowi-1>0 Tvci(Dij,Cont)=1; end
+             Dij=((colj-kk)-1)*(e-1)+(rowi+1); % from ij to position in the Dynkin
+             if rowi+1<e && rowi+1>0 Tvci(Dij,Cont)=1; end
+             Dij=((colj+kk)-1)*(e-1)+(rowi+1); % from ij to position in the Dynkin
+             if rowi+1<e && rowi+1>0 Tvci(Dij,Cont)=1; end
+             Cont=Cont+1;
+        end
+
+
+        Tvcj=zeros(N,1);   %% Conditions by fixing j
+        Cont=1;
+        for nn=1:e/r-1
+            %% v_{nr,j}
+            Dij=(colj-1)*(e-1)+nn*r; % from ij to position in the Dynkin
+            Tvcj(Dij,Cont)=1; Cont=Cont+1;
+        end
+        for ll=1:r-1
+             %% v_{nr-l,j}+v_{nr+l,j}
+             Dij=(colj-1)*(e-1)+(rowi-ll); % from ij to position in the Dynkin
+             Tvcj(Dij,Cont)=1;
+             Dij=(colj-1)*(e-1)+(rowi+ll); % from ij to position in the Dynkin
+             Tvcj(Dij,Cont)=1; Cont=Cont+1;
+
+              %% v_{nr-l,j-1}+v_{nr+l,j-1}+v_{nr-l,j+1}+v_{nr+l,j+1}
+             Dij=((colj-1)-1)*(e-1)+(rowi-ll); % from ij to position in the Dynkin
+             if colj-1<d && colj-1>0 Tvcj(Dij,Cont)=1; end
+             Dij=((colj-1)-1)*(e-1)+(rowi+ll); % from ij to position in the Dynkin
+             if colj-1<d && colj-1>0 Tvcj(Dij,Cont)=1; end
+             Dij=((colj+1)-1)*(e-1)+(rowi-ll); % from ij to position in the Dynkin
+             if colj+1<d && colj+1>0 Tvcj(Dij,Cont)=1; end
+             Dij=((colj+1)-1)*(e-1)+(rowi+ll); % from ij to position in the Dynkin
+             if colj+1<d && colj+1>0 Tvcj(Dij,Cont)=1; end
+        end
+
+
        %%%% Choosing the vanishing cycles described in Lemma 2.5
        Tlvc=[Tvci Tvcj]; %%% The union of two conditions
-       [Z, pivots]=rref(Tlvc);
-       Tvc0=Tlvc(:,pivots);
-       Tvc(:,1:size(Tvc0,2),l)=Tvc0;
-        %% Comparation between the theoric and computation of Vanishing cycles in the suspaces generated:
-       [Z,generadores]=rref([real(Wout(:,:,l)),Tvc0(:,:)]); 
-       %Proof_for_vl=prod(1:rank(Wout(:,:,l))==generadores)
-       % We look if the Theoric van. cycles Tvc are in the span o f v_l Wout(:,:l)
-       Proof_for_vl=(rank([round(Wout(:,:,l),10),Tvc0])==rank(round(Wout(:,:,l),10))); 
+       
+       %%%% The solutions of U*x=Tlvc
+       W=U\Tlvc;    
+       %% U*x=Tlvc(:,1) are the generators Krylov sub. of vl
+        aW=abs(W); %% The norm of W
+       Rzeros=-round(log10(max(aW(:,1))))+3; %% The order of rounding to zero
+       if Rzeros <4
+           Rzeros=4;
+       end
+      
+       [IndR, IndC]=find(round(aW(:,:),Rzeros)~=0); %% The coeff. different to 0
+       Proof_for_vl=1;
+       if length(IndR(IndC==1))~=N
+           for k=1:size(Tlvc,2)
+               Proof_for_vl=Proof_for_vl*prod(ismember(IndR(IndC==k),IndR(IndC==1)));
+           end
+       end
        Proof_for_d=Proof_for_d*Proof_for_vl;
    end
    Proof=Proof_for_d;
 else %% If there are eigenvalues with multiplicity bigger than 1
-       Tvc=0; Wout=0; Proof=0;
+   Proof=0;
 end
          
